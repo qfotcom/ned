@@ -112,10 +112,6 @@ void Settings::checkSettingsFile()
 										  fontChanged,
 										  fontSizeChanged,
 										  themeChanged);
-	if (settingsChanged || fontChanged || fontSizeChanged || themeChanged)
-	{
-		profileJustSwitched = true;
-	}
 }
 
 void Settings::renderSettingsWindow()

@@ -58,6 +58,8 @@ void findWordBoundaries(const std::string &text, int cursor_pos, int &start, int
 
 void EditorMouse::handleMouseInput()
 {
+	ImGui::SetMouseCursor(ImGuiMouseCursor_TextInput);
+
 	int char_index = getCharIndexFromCoords();
 
 	// Handle double click

@@ -524,15 +524,6 @@ void AIAgent::renderMessageHistory(const ImVec2 &size, ImFont *largeFont)
 			// Reset selection to first item (current model)
 			selectedItem = 0;
 			dropdownInitialized = true;
-
-			// Debug: Print all available models
-			std::cout << "=== AVAILABLE MODELS ===" << std::endl;
-			for (size_t i = 0; i < displayItems.size(); ++i)
-			{
-				std::cout << i << ": " << displayItems[i] << " (" << dropdownItems[i]
-						  << ")" << std::endl;
-			}
-			std::cout << "=== END MODELS ===" << std::endl;
 		}
 
 		// Use the large font for the title

@@ -57,6 +57,7 @@ class Splitter
 	float agent_hover_start_time = -1.0f;
 
 	// State tracking for agent splitter dragging
+	bool mainDragging = false;
 	bool dragging = false;
 	float dragOffset = 0.0f;
 };

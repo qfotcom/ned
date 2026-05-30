@@ -11,6 +11,7 @@ Description: Font management class implementation for NED text editor.
 #include "terminal.h"
 #include <filesystem>
 #include <iostream>
+#include <vector>
 
 #ifdef IMGUI_ENABLE_FREETYPE
 #include "misc/freetype/imgui_freetype.h"
@@ -174,6 +175,44 @@ ImFont *Font::loadFont(const std::string &fontName, float fontSize)
 	{
 		std::cerr << "[Font::loadFont] No emoji font found at: " << emojiPath
 				  << std::endl;
+	}
+
+	// Merge CJK font so Chinese/Japanese/Korean text renders in the editor
+	{
+		ImFontConfig config_cjk;
+		config_cjk.MergeMode = true;
+		const ImWchar *cjk_ranges = io.Fonts->GetGlyphRangesChineseSimplifiedCommon();
+
+		std::vector<std::string> cjkFontPaths = {
+			resourcePath + "/fonts/NotoSansSC-Regular.otf",
+			resourcePath + "/fonts/NotoSansSC-Regular.ttf",
+			resourcePath + "/fonts/NotoSansCJK-Regular.ttc",
+		};
+#ifdef PLATFORM_WINDOWS
+		cjkFontPaths.insert(cjkFontPaths.end(),
+							{"C:/Windows/Fonts/msyh.ttc",
+							 "C:/Windows/Fonts/msyhbd.ttc",
+							 "C:/Windows/Fonts/simhei.ttf",
+							 "C:/Windows/Fonts/simsun.ttc"});
+#endif
+
+		for (const auto &cjkPath : cjkFontPaths)
+		{
+			if (!std::filesystem::exists(cjkPath))
+				continue;
+
+			ImFontConfig cfg = config_cjk;
+			if (cjkPath.size() >= 4 && cjkPath.substr(cjkPath.size() - 4) == ".ttc")
+				cfg.FontNo = 0;
+
+			if (io.Fonts->AddFontFromFileTTF(
+					cjkPath.c_str(), fontSize, &cfg, cjk_ranges))
+			{
+				std::cout << "[Font::loadFont] Merged CJK font: " << cjkPath
+						  << std::endl;
+				break;
+			}
+		}
 	}
 
 	if (!font)

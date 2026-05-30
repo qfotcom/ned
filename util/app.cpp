@@ -19,6 +19,7 @@ editor. This class combines the functionality of ApplicationManager and Graphics
 #include "util/settings.h"
 #include <chrono>
 #include <iostream>
+#include <thread>
 
 #ifdef __APPLE__
 #include "../macos_window.h"
@@ -139,6 +140,13 @@ void App::runMainLoop(ShaderManager &shaderManager,
 
 		// Handle window management
 		handleWindowManagement(window);
+
+		// Skip rendering while minimized; framebuffer size is 0 and GL setup fails.
+		if (!isWindowRenderable())
+		{
+			std::this_thread::sleep_for(std::chrono::milliseconds(50));
+			continue;
+		}
 
 		// Handle scroll accumulators
 		handleScrollAccumulators(this->scrollXAccumulator, this->scrollYAccumulator);
@@ -377,6 +385,20 @@ void App::updateMacOSWindowProperties(float opacity, bool blurEnabled)
 bool App::isWindowFocused(GLFWwindow *window) const
 {
 	return window ? glfwGetWindowAttrib(window, GLFW_FOCUSED) != 0 : false;
+}
+
+bool App::isWindowRenderable() const
+{
+	if (!window)
+		return false;
+
+	if (glfwGetWindowAttrib(window, GLFW_ICONIFIED))
+		return false;
+
+	int width = 0;
+	int height = 0;
+	glfwGetFramebufferSize(window, &width, &height);
+	return width > 0 && height > 0;
 }
 
 void App::handleSettingsChanges(Settings &settings,

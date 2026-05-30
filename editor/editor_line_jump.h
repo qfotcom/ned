@@ -8,7 +8,7 @@
 
 #pragma once
 #include "../files/files.h"
-#include "../imgui/imgui.h"
+#include "imgui.h"
 #include "../util/close_popper.h"
 #include "../util/keybinds.h"
 #include "editor.h"

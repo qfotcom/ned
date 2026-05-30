@@ -40,6 +40,10 @@ elseif(WIN32)
         add_compile_options(/Zc:__cplusplus)
         # Enable parallel compilation for faster builds
         add_compile_options(/MP)
+        # UTF-8 source/execution charset (required for Unicode literals on Chinese Windows)
+        add_compile_options(/utf-8)
+        # /MD: keep CRT/STL consistent across ned, libgit2, and vcpkg (avoids LNK2001 __std_*)
+        set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
     endif()
 elseif(UNIX)
     add_compile_definitions(PLATFORM_LINUX)
@@ -299,6 +303,10 @@ add_executable(ned
   ${IMGUI_SOURCES}
   ${WINDOWS_RESOURCES}
 )
+
+if(MSVC)
+  set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ned)
+endif()
 
 # ================
 # Embeddable Library

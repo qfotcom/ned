@@ -570,18 +570,24 @@ void FileExplorer::renderFileExplorer(float explorerWidth)
 {
 	ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 0.0f);
 	ImGui::PushStyleVar(ImGuiStyleVar_ChildBorderSize, 1.0f);
+	ImGui::PushStyleVar(ImGuiStyleVar_ScrollbarSize, 12.0f);
 	ImGui::PushStyleColor(
 		ImGuiCol_Border, ImVec4(1.0f, 0.0f, 0.0f, 0.0f)); // Red border to make it visible
-	ImGui::BeginChild(
-		"File Explorer", ImVec2(explorerWidth, -1), true, ImGuiWindowFlags_NoScrollbar);
+	ImGui::PushStyleColor(ImGuiCol_ScrollbarBg, ImVec4(0.05f, 0.05f, 0.05f, 0.4f));
+	ImGui::PushStyleColor(ImGuiCol_ScrollbarGrab, ImVec4(0.4f, 0.4f, 0.4f, 0.5f));
+	ImGui::PushStyleColor(ImGuiCol_ScrollbarGrabHovered,
+						  ImVec4(0.6f, 0.6f, 0.6f, 0.7f));
+	ImGui::PushStyleColor(ImGuiCol_ScrollbarGrabActive,
+						  ImVec4(0.8f, 0.8f, 0.8f, 0.9f));
+	ImGui::BeginChild("File Explorer", ImVec2(explorerWidth, -1), true);
 
 	if (!selectedFolder.empty())
 	{
 		gFileTree.displayFileTree(gFileTree.rootNode); // Changed to use gFileTree
 	}
 	ImGui::EndChild();
-	ImGui::PopStyleColor();
-	ImGui::PopStyleVar(2);
+	ImGui::PopStyleColor(5);
+	ImGui::PopStyleVar(3);
 }
 
 void FileExplorer::renderEditor(bool &text_changed)

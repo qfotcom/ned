@@ -129,11 +129,20 @@ std::string SettingsFileManager::getAppResourcesPath()
 std::string SettingsFileManager::getUserSettingsPath()
 {
 	const char *home = getenv("HOME");
+#ifdef PLATFORM_WINDOWS
+	if (!home)
+		home = getenv("USERPROFILE");
+#endif
 	if (!home)
 	{
-		std::cerr << "[Settings] WARNING: HOME environment variable not found. Using "
-					 "'./ned/settings/ned.json' for primary settings."
-				  << std::endl;
+		static bool warned = false;
+		if (!warned)
+		{
+			warned = true;
+			std::cerr << "[Settings] WARNING: HOME/USERPROFILE not found. Using "
+						 "'./ned/settings/ned.json' for primary settings."
+					  << std::endl;
+		}
 		return "ned/settings/ned.json";
 	}
 	return std::string(home) + "/ned/settings/ned.json";

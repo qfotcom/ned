@@ -121,8 +121,17 @@ void Splitter::renderSplitter(float padding, float availableWidth)
 	ImU32 current_color = determineSplitterColor(is_hovered, is_active, visual_hover);
 	drawSplitterVisual(min, max, current_color);
 
-	// Handle dragging
-	if (is_active)
+	// Handle dragging — save splitPos to disk on release (same as agent splitter)
+	if (ImGui::IsItemActive() && !mainDragging)
+	{
+		mainDragging = true;
+	}
+	if (!ImGui::IsItemActive() && mainDragging)
+	{
+		mainDragging = false;
+		gSettings.saveSettings();
+	}
+	if (mainDragging)
 	{
 		const float mouse_x = ImGui::GetMousePos().x - ImGui::GetWindowPos().x;
 		float new_split = (mouse_x - padding * 2) / (availableWidth - padding * 4 - 6);

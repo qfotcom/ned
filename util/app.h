@@ -79,6 +79,7 @@ class App
 	void updateMacOSWindowProperties(float opacity, bool blurEnabled);
 	void cleanupMacOSApplicationDelegate();
 	bool isWindowFocused(GLFWwindow *window) const;
+	bool isWindowRenderable() const;
 	void
 	handleSettingsChanges(Settings &settings, float &lastOpacity, bool &lastBlurEnabled);
 

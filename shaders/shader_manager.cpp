@@ -36,7 +36,14 @@ void ShaderManager::initializeFramebuffers(int width,
 										   FramebufferState &fb,
 										   AccumulationBuffers &accum)
 {
+	// Minimized/hidden windows report 0x0; do not recreate framebuffers in that state.
+	if (width <= 0 || height <= 0)
+		return;
+
 	auto initFB = [](FramebufferState &fb, int w, int h) {
+		if (w <= 0 || h <= 0)
+			return;
+
 		if (fb.initialized && w == fb.last_display_w && h == fb.last_display_h)
 			return;
 
@@ -92,13 +99,6 @@ void ShaderManager::initializeFramebuffers(int width,
 	initFB(fb, width, height);
 	initFB(accum.accum[0], width, height);
 	initFB(accum.accum[1], width, height);
-
-	// Add debug checks after initialization
-	glBindFramebuffer(GL_FRAMEBUFFER, accum.accum[0].framebuffer);
-	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-	{
-		std::cerr << "🔴 Accumulation buffer 0 incomplete!" << std::endl;
-	}
 }
 
 void ShaderManager::cleanupFramebuffers(FramebufferState &fb, AccumulationBuffers &accum)

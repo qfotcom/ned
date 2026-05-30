@@ -43,13 +43,15 @@ void EditorRender::renderEditorFrame()
 	float scrollY = ImGui::GetScrollY();
 	float scrollX = ImGui::GetScrollX();
 
-	// Update scroll manager with final positions
+	// Update scroll manager with final positions (includes scrollbar drag)
 	gEditorScroll.setScrollPosition(ImVec2(scrollX, scrollY));
 	gEditorScroll.setScrollX(scrollX);
+	editor_state.current_scroll_x = scrollX;
+	editor_state.current_scroll_y = scrollY;
 
 	// End the editor child window
 	ImGui::EndChild();
-	ImGui::PopStyleColor(4);
+	ImGui::PopStyleColor(5);
 	ImGui::PopStyleVar(4);
 
 	// Render line numbers with proper clipping
@@ -110,7 +112,8 @@ void EditorRender::beginTextEditorChild(const char *label,
 	ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 0.0f);
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
 	ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.5f, 0.5f, 0.5f, 0.5f));
-	ImGui::PushStyleColor(ImGuiCol_ScrollbarBg, ImVec4(0.05f, 0.05f, 0.05f, 0.0f));
+	ImGui::PushStyleColor(ImGuiCol_ScrollbarBg, ImVec4(0.05f, 0.05f, 0.05f, 0.4f));
+	ImGui::PushStyleColor(ImGuiCol_ScrollbarGrab, ImVec4(0.4f, 0.4f, 0.4f, 0.5f));
 	ImGui::PushStyleColor(ImGuiCol_ScrollbarGrabHovered, ImVec4(0.6f, 0.6f, 0.6f, 0.7f));
 	ImGui::PushStyleColor(ImGuiCol_ScrollbarGrabActive, ImVec4(0.8f, 0.8f, 0.8f, 0.9f));
 	ImGui::PushStyleVar(ImGuiStyleVar_ScrollbarSize, 12.0f);
