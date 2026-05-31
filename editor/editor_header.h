@@ -37,4 +37,7 @@ class EditorHeader
 
 	// Helper function to get status icons
 	ImTextureID getStatusIcon(const std::string &iconName);
+
+	void renderMarkdownViewToggle(float iconSize, const std::string &currentFile);
+	void renderNodeEditorIcon(float iconSize);
 };

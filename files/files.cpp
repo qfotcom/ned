@@ -18,6 +18,8 @@
 #include "../util/close_popper.h"
 #include "../util/icon_definitions.h"
 #include "../util/settings.h"
+#include "../ui/markdown_file.h"
+#include "../ui/ned_markdown.h"
 #include "files.h"
 #include "imgui.h"
 #include "imgui_impl_opengl3.h"
@@ -463,6 +465,9 @@ void FileExplorer::loadFileContent(const std::string &path,
 			return;
 		}
 
+		if (!NedMarkdownFile::isMarkdownPath(path))
+			markdownPreviewMode = false;
+
 		_unsavedChanges = false;
 		updateFilePathStates(path);
 		updateFileColorBuffer();
@@ -540,7 +545,8 @@ void FileExplorer::renderFileContent()
 
 	gFileContentSearch.handleFindBoxActivation();
 
-	gFileContentSearch.renderFindBox();
+	if (!(NedMarkdownFile::isMarkdownPath(currentFile) && markdownPreviewMode))
+		gFileContentSearch.renderFindBox();
 
 	bool text_changed;
 	renderEditor(text_changed);
@@ -590,8 +596,43 @@ void FileExplorer::renderFileExplorer(float explorerWidth)
 	ImGui::PopStyleVar(3);
 }
 
+void FileExplorer::renderMarkdownPreview()
+{
+	ImVec2 avail = ImGui::GetContentRegionAvail();
+	if (avail.y < 64.0f)
+		avail.y = 64.0f;
+
+	ImGui::PushStyleVar(ImGuiStyleVar_ChildBorderSize, 1.0f);
+	ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 0.0f);
+	ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.5f, 0.5f, 0.5f, 0.5f));
+	ImGui::PushStyleColor(ImGuiCol_ScrollbarBg, ImVec4(0.05f, 0.05f, 0.05f, 0.4f));
+	ImGui::PushStyleColor(ImGuiCol_ScrollbarGrab, ImVec4(0.4f, 0.4f, 0.4f, 0.5f));
+	ImGui::PushStyleColor(ImGuiCol_ScrollbarGrabHovered, ImVec4(0.6f, 0.6f, 0.6f, 0.7f));
+	ImGui::PushStyleColor(ImGuiCol_ScrollbarGrabActive, ImVec4(0.8f, 0.8f, 0.8f, 0.9f));
+	ImGui::PushStyleVar(ImGuiStyleVar_ScrollbarSize, 12.0f);
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(14.0f, 10.0f));
+
+	ImGui::BeginChild("MarkdownPreview",
+					  avail,
+					  ImGuiChildFlags_Borders,
+					  ImGuiWindowFlags_AlwaysVerticalScrollbar |
+						  ImGuiWindowFlags_AlwaysUseWindowPadding);
+	NedMarkdown::Render(editor_state.fileContent);
+	ImGui::EndChild();
+
+	ImGui::PopStyleVar(4);
+	ImGui::PopStyleColor(5);
+}
+
 void FileExplorer::renderEditor(bool &text_changed)
 {
+	if (NedMarkdownFile::isMarkdownPath(currentFile) && markdownPreviewMode)
+	{
+		renderMarkdownPreview();
+		text_changed = false;
+		return;
+	}
+
 	gEditor.textEditor();
 
 	if (editor_state.text_changed && !editor_state.active_find_box)

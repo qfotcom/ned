@@ -21,6 +21,23 @@
 
 #include <iostream>
 
+namespace
+{
+// Cursor-like grey highlights (dark tint, readable on dark themes)
+constexpr ImVec4 kEditorCurrentLineBg = ImVec4(0.38f, 0.38f, 0.42f, 0.22f);
+constexpr ImVec4 kEditorSelectionBg = ImVec4(0.42f, 0.42f, 0.46f, 0.32f);
+
+ImU32 editorCurrentLineColor()
+{
+	return ImGui::ColorConvertFloat4ToU32(kEditorCurrentLineBg);
+}
+
+ImU32 editorSelectionColor()
+{
+	return ImGui::ColorConvertFloat4ToU32(kEditorSelectionBg);
+}
+} // namespace
+
 EditorRender gEditorRender;
 
 void EditorRender::renderEditorFrame()
@@ -198,8 +215,7 @@ void EditorRender::renderLineBackground(int line_num,
 		return; // Line is not visible
 	}
 
-	const ImU32 highlight_color =
-		ImGui::ColorConvertFloat4ToU32(ImVec4(0.18f, 0.18f, 0.18f, 0.3f));
+	const ImU32 highlight_color = editorCurrentLineColor();
 	ImVec2 window_pos = ImGui::GetWindowPos();
 	float window_width = ImGui::GetWindowWidth();
 
@@ -270,11 +286,9 @@ void EditorRender::renderCharacterAndSelection(size_t char_index,
 			ImVec2 sel_start_pos = current_draw_pos;
 			ImVec2 sel_end_pos = ImVec2(sel_start_pos.x + tab_width,
 										sel_start_pos.y + editor_state.line_height);
-			const ImU32 selection_color =
-				ImGui::ColorConvertFloat4ToU32(ImVec4(1.0f, 0.1f, 0.7f, 0.3f));
 			ImGui::GetWindowDrawList()->AddRectFilled(sel_start_pos,
 													  sel_end_pos,
-													  selection_color);
+													  editorSelectionColor());
 		}
 
 		// Don't render anything - just advance the cursor by tab width
@@ -324,11 +338,9 @@ void EditorRender::renderCharacterAndSelection(size_t char_index,
 		ImVec2 sel_start_pos = current_draw_pos;
 		ImVec2 sel_end_pos = ImVec2(sel_start_pos.x + char_width,
 									sel_start_pos.y + editor_state.line_height);
-		const ImU32 selection_color =
-			ImGui::ColorConvertFloat4ToU32(ImVec4(1.0f, 0.1f, 0.7f, 0.3f));
 		ImGui::GetWindowDrawList()->AddRectFilled(sel_start_pos,
 												  sel_end_pos,
-												  selection_color);
+												  editorSelectionColor());
 	}
 
 	ImU32 text_color =
@@ -561,14 +573,10 @@ void EditorRender::renderCurrentLineHighlight()
 	float hl_x_start = window_pos.x + 6.0f;
 	float hl_x_end = window_pos.x + window_width;
 
-	// Subtle highlight color - light grey tint
-	const ImU32 highlight_color =
-		ImGui::ColorConvertFloat4ToU32(ImVec4(0.5f, 0.5f, 0.5f, 0.08f));
-
-	// Draw the highlight rectangle
+	// Draw the highlight rectangle (same family as text selection, lighter)
 	ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(hl_x_start, line_y_start),
 											  ImVec2(hl_x_end, line_y_end),
-											  highlight_color);
+											  editorCurrentLineColor());
 }
 
 void EditorRender::renderText()

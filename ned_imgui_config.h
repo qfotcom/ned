@@ -14,3 +14,7 @@
 // (in this repository) + the FreeType library (not provided). On Windows you may use
 // vcpkg with 'vcpkg install freetype --triplet=x64-windows' + 'vcpkg integrate install'.
 #define IMGUI_ENABLE_FREETYPE
+
+// Stack layout (BeginHorizontal/Spring) for imgui-node-editor blueprints example.
+// Requires lib/imgui/misc/stacklayout/imgui_stacklayout.cpp
+#define IMGUI_HAS_STACK_LAYOUT

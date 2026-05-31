@@ -1,5 +1,6 @@
 #include "welcome.h"
 #include "../files/files.h"
+#include "../ui/panels/node_editor_demo.h"
 #include "settings.h"
 #include "util/debug_console.h"
 #include <iostream>
@@ -436,8 +437,23 @@ void Welcome::render()
 		ImGui::PopStyleVar(2);
 		ImGui::PopStyleColor(3);
 
+		// Node editor demo entry
+		float nodeDemoY = buttonY + buttonHeight + 16.0f;
+		ImGui::SetCursorPos(ImVec2(buttonX, nodeDemoY));
+		ImGui::PushStyleColor(ImGuiCol_Button, buttonBgColor);
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, hoverColor);
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, activeColor);
+		ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 8.0f);
+		if (ImGui::Button("Node Editor Demo", ImVec2(buttonWidth, 44.0f)))
+		{
+			gFileExplorer.showWelcomeScreen = false;
+			gNodeEditorDemo.open();
+		}
+		ImGui::PopStyleVar();
+		ImGui::PopStyleColor(3);
+
 		// Keybinds section under the button on the right side
-		float keybindsY = buttonY + buttonHeight + 30.0f;
+		float keybindsY = nodeDemoY + 44.0f + 30.0f;
 		float keybindsX = contentStartX;
 
 		// Only show keybinds if there's enough space
@@ -455,6 +471,7 @@ void Welcome::render()
 
 				// Two column layout aligned under the button
 				const char *keybinds[] = {"CMD+O Open Folder",
+										  "CMD+Shift+N Node Editor",
 										  "CMD+T Terminal",
 										  "CMD+B Bookmarks",
 										  "CMD+: Line Jump",
@@ -607,7 +624,21 @@ void Welcome::render()
 		ImGui::PopStyleVar(2);
 		ImGui::PopStyleColor(3);
 
-		currentY += buttonHeight + 40.0f;
+		ImGui::SetCursorPos(
+			ImVec2((windowWidth - buttonWidth) * 0.5f, currentY + buttonHeight + 16.0f));
+		ImGui::PushStyleColor(ImGuiCol_Button, buttonBgColor);
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, hoverColor);
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, activeColor);
+		ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 8.0f);
+		if (ImGui::Button("Node Editor Demo", ImVec2(buttonWidth, 44.0f)))
+		{
+			gFileExplorer.showWelcomeScreen = false;
+			gNodeEditorDemo.open();
+		}
+		ImGui::PopStyleVar();
+		ImGui::PopStyleColor(3);
+
+		currentY += buttonHeight + 44.0f + 40.0f;
 	}
 
 	// Render welcome image grid below the main content (after both layouts)

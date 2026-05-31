@@ -1,6 +1,25 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.15)
 project(ned)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+# /MD: keep CRT/STL consistent across all static libs and ned.exe (avoids LNK2001 __std_*)
+if(MSVC)
+  set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL" CACHE STRING "" FORCE)
+  # Avoid C1900 IL mismatch when Release .obj files come from different VS toolset builds
+  set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE OFF CACHE BOOL "" FORCE)
+  set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELWITHDEBINFO OFF CACHE BOOL "" FORCE)
+  set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_MINSIZEREL OFF CACHE BOOL "" FORCE)
+endif()
+
+macro(ned_set_msvc_runtime target)
+  if(MSVC)
+    set_target_properties(${target} PROPERTIES
+      MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL"
+      INTERPROCEDURAL_OPTIMIZATION_RELEASE OFF
+      INTERPROCEDURAL_OPTIMIZATION_RELWITHDEBINFO OFF
+      INTERPROCEDURAL_OPTIMIZATION_MINSIZEREL OFF)
+  endif()
+endmacro()
 
 # ========================
 # Configuration & Settings
@@ -42,8 +61,6 @@ elseif(WIN32)
         add_compile_options(/MP)
         # UTF-8 source/execution charset (required for Unicode literals on Chinese Windows)
         add_compile_options(/utf-8)
-        # /MD: keep CRT/STL consistent across ned, libgit2, and vcpkg (avoids LNK2001 __std_*)
-        set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
     endif()
 elseif(UNIX)
     add_compile_definitions(PLATFORM_LINUX)
@@ -114,6 +131,7 @@ target_include_directories(nfd PUBLIC
   ${NFD_DIR}/src
   ${NFD_DIR}/src/include
 )
+ned_set_msvc_runtime(nfd)
 
 # =================
 # Tree-Sitter Setup
@@ -127,6 +145,7 @@ target_include_directories(tree-sitter-lib PUBLIC
   lib/tree-sitter/lib/include
   lib/tree-sitter/lib/src
 )
+ned_set_msvc_runtime(tree-sitter-lib)
 
 # Manually define grammars with non-standard structures
 set(TS_GRAMMAR_LIBS)
@@ -140,6 +159,7 @@ target_include_directories(tree-sitter-typescript-grammar PRIVATE
   lib/tree-sitter-typescript/typescript/src
 )
 list(APPEND TS_GRAMMAR_LIBS tree-sitter-typescript-grammar)
+ned_set_msvc_runtime(tree-sitter-typescript-grammar)
 
 # TSX
 add_library(tree-sitter-tsx-grammar STATIC
@@ -150,6 +170,7 @@ target_include_directories(tree-sitter-tsx-grammar PRIVATE
   lib/tree-sitter-typescript/tsx/src
 )
 list(APPEND TS_GRAMMAR_LIBS tree-sitter-tsx-grammar)
+ned_set_msvc_runtime(tree-sitter-tsx-grammar)
 
 # Other grammars with standard structure
 file(GLOB TS_GRAMMAR_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/lib/tree-sitter-*")
@@ -176,6 +197,7 @@ foreach(TS_DIR ${TS_GRAMMAR_DIRS})
     C_STANDARD_REQUIRED YES
   )
   target_link_libraries(tree-sitter-${LANG}-grammar PRIVATE tree-sitter-lib)
+  ned_set_msvc_runtime(tree-sitter-${LANG}-grammar)
   list(APPEND TS_GRAMMAR_LIBS tree-sitter-${LANG}-grammar)
 endforeach()
 
@@ -205,6 +227,7 @@ add_subdirectory(lib/lsp-framework)
 if(WIN32 AND MSVC)
     target_compile_options(lsp PRIVATE /permissive-)
     target_compile_definitions(lsp PRIVATE _ALLOW_ITERATOR_DEBUG_LEVEL_MISMATCH)
+    ned_set_msvc_runtime(lsp)
 endif()
 
 # Replace problematic connection.cpp with our patched version for all platforms
@@ -244,6 +267,7 @@ if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
       lib/imgui/backends/imgui_impl_glfw.cpp
       lib/imgui/backends/imgui_impl_opengl3.cpp
       lib/imgui/misc/freetype/imgui_freetype.cpp
+      lib/imgui/misc/stacklayout/imgui_stacklayout.cpp
     )
     set(IMGUI_INCLUDE_DIRS lib/imgui lib/imgui/backends)
 else()
@@ -254,6 +278,56 @@ endif()
 
 # Custom ImGui configuration to avoid modifying the submodule
 add_definitions(-DIMGUI_USER_CONFIG="ned_imgui_config.h")
+
+# ========================
+# ImGui UI extensions (Agent / Ops)
+# ========================
+set(IMGUI_NODE_EDITOR_DIR ${CMAKE_CURRENT_SOURCE_DIR}/lib/imgui-node-editor)
+
+set(IMGUI_NODE_EDITOR_SOURCES
+  ${IMGUI_NODE_EDITOR_DIR}/imgui_node_editor.cpp
+  ${IMGUI_NODE_EDITOR_DIR}/imgui_node_editor_api.cpp
+  ${IMGUI_NODE_EDITOR_DIR}/imgui_canvas.cpp
+  ${IMGUI_NODE_EDITOR_DIR}/crude_json.cpp
+)
+
+set(BLUEPRINTS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ui/panels/blueprints)
+
+set(BLUEPRINTS_SOURCES
+  ${BLUEPRINTS_DIR}/blueprints_texture.cpp
+  ${BLUEPRINTS_DIR}/blueprints_editor.cpp
+  ${BLUEPRINTS_DIR}/utilities/builders.cpp
+  ${BLUEPRINTS_DIR}/utilities/drawing.cpp
+  ${BLUEPRINTS_DIR}/utilities/widgets.cpp
+)
+
+add_library(ned_ui OBJECT
+  ui/ned_markdown.cpp
+  ui/ned_node_editor.cpp
+  ui/markdown_file.cpp
+  ui/panels/node_editor_demo.cpp
+  ${BLUEPRINTS_SOURCES}
+  ${IMGUI_NODE_EDITOR_SOURCES}
+)
+target_include_directories(ned_ui PUBLIC
+  ${CMAKE_CURRENT_SOURCE_DIR}
+  ${CMAKE_CURRENT_SOURCE_DIR}/ui
+  ${BLUEPRINTS_DIR}
+  ${IMGUI_INCLUDE_DIRS}
+  ${CMAKE_CURRENT_SOURCE_DIR}/lib/imgui_markdown
+  ${IMGUI_NODE_EDITOR_DIR}
+  ${CMAKE_BINARY_DIR}
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
+  target_include_directories(ned_ui PRIVATE
+    $<TARGET_PROPERTY:GLEW::GLEW,INTERFACE_INCLUDE_DIRECTORIES>
+  )
+endif()
+if(MSVC)
+  target_compile_options(ned_ui PRIVATE /wd4244 /wd4267)
+endif()
+ned_set_msvc_runtime(ned_ui)
 
 # Utility library
 add_library(ned_util STATIC
@@ -282,6 +356,7 @@ target_include_directories(ned_util PUBLIC
 )
 target_link_libraries(ned_util PUBLIC ${OPENGL_LIBRARIES} glfw libgit2 util)
 add_dependencies(ned_util libgit2 util)
+ned_set_msvc_runtime(ned_util)
 
 # ================
 # Main Executable (only in standalone mode)
@@ -307,6 +382,7 @@ add_executable(ned
 if(MSVC)
   set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ned)
 endif()
+ned_set_msvc_runtime(ned)
 
 # ================
 # Embeddable Library
@@ -321,6 +397,7 @@ add_library(ned_embed STATIC
   ${FILES_SOURCES}
   ${IMGUI_SOURCES}
 )
+ned_set_msvc_runtime(ned_embed)
 
 # =====================
 # macOS Window Management
@@ -397,11 +474,13 @@ target_include_directories(ned_embed PUBLIC
 # Linking
 # ================
 # Force standalone linking
+target_sources(ned PRIVATE $<TARGET_OBJECTS:ned_ui>)
 target_link_libraries(ned PRIVATE
   ${OPENGL_LIBRARIES}
   glfw
   nfd
   ned_util
+  ned_ui
   GLEW::GLEW
   Freetype::Freetype
   CURL::libcurl 
@@ -427,11 +506,13 @@ add_dependencies(ned libgit2 util llhttp xdiff)
 
 if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
   # Standalone: link to our own ImGui, FreeType, GLEW, etc.
+  target_sources(ned_embed PRIVATE $<TARGET_OBJECTS:ned_ui>)
   target_link_libraries(ned_embed PUBLIC
     ${OPENGL_LIBRARIES}
     glfw
     nfd
     ned_util
+    ned_ui
     GLEW::GLEW
     Freetype::Freetype
     CURL::libcurl 
@@ -457,11 +538,13 @@ if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
 else()
   # Embedded: expect parent to provide ImGui, FreeType, GLEW, etc.
   # Note: imgui is compiled directly into the parent executable, so we don't link against it
+  target_sources(ned_embed PRIVATE $<TARGET_OBJECTS:ned_ui>)
     target_link_libraries(ned_embed PUBLIC
     OpenGL::GL
     glfw
     nfd
     ned_util
+    ned_ui
     GLEW::GLEW
     Freetype::Freetype
     CURL::libcurl 

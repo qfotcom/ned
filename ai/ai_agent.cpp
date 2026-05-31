@@ -1,4 +1,5 @@
 #include "ai_agent.h"
+#include "../ui/widgets.h"
 #include "../files/files.h" // for gFileExplorer
 #include "../lib/json.hpp"
 #include "agent_request.h"
@@ -213,8 +214,12 @@ void AIAgent::rebuildMessageDisplayLines()
 			continue;
 		}
 
-		// Add separator line before each message (except the first one)
-		if (i > 0)
+		// Assistant messages render as Markdown in the UI; keep flat lines for copy/select on others.
+		if (msg.role == "assistant")
+			continue;
+
+		// Add separator line before each message (except the first visible one)
+		if (!messageDisplayLines.empty())
 		{
 			// Calculate separator width based on available width and font metrics
 			float separatorWidth = availableWidth;
@@ -230,33 +235,7 @@ void AIAgent::rebuildMessageDisplayLines()
 
 		std::string displayText = msg.text;
 
-		// Use role-based display only
-		if (msg.role == "assistant")
-		{
-			displayText = "✨ Agent: " + displayText;
-
-			// If this assistant message contains tool calls, add details about them
-			if (!msg.tool_calls.is_null() && msg.tool_calls.is_array() &&
-				!msg.tool_calls.empty())
-			{
-				displayText += "\n[Tool calls made:";
-				for (size_t i = 0; i < msg.tool_calls.size(); ++i)
-				{
-					const auto &toolCall = msg.tool_calls[i];
-					if (toolCall.contains("function") &&
-						toolCall["function"].contains("name") &&
-						!toolCall["function"]["name"].is_null())
-					{
-						std::string toolName =
-							toolCall["function"]["name"].get<std::string>();
-						displayText += " " + toolName;
-						if (i < msg.tool_calls.size() - 1)
-							displayText += ",";
-					}
-				}
-				displayText += "]";
-			}
-		} else if (msg.role == "user")
+		if (msg.role == "user")
 		{
 			displayText = "🧑 User: " + displayText;
 		} else if (msg.role == "tool")
@@ -635,15 +614,96 @@ void AIAgent::renderMessageHistory(const ImVec2 &size, ImFont *largeFont)
 		}
 	} else
 	{
-		// Render messages as usual
-		for (size_t i = 0; i < messageDisplayLines.size(); ++i)
+		std::vector<Message> messagesCopy;
 		{
-			ImGui::TextWrapped("%s", messageDisplayLines[i].c_str());
+			std::lock_guard<std::mutex> lock(messagesMutex);
+			messagesCopy = messages;
+		}
+
+		float scrollbarWidth = ImGui::GetStyle().ScrollbarSize;
+		float childPadding = ImGui::GetStyle().ChildRounding * 2.0f;
+		float availableWidth = size.x - scrollbarWidth - childPadding - 8.0f;
+		if (availableWidth < 50.0f)
+			availableWidth = 50.0f;
+
+		auto drawSeparator = [availableWidth]() {
+			ImVec2 dashSize = ImGui::CalcTextSize("-");
+			int numDashes = static_cast<int>(availableWidth / dashSize.x);
+			if (numDashes < 3)
+				numDashes = 3;
+			std::string separator(static_cast<size_t>(numDashes), '-');
+			ImGui::TextWrapped("%s", separator.c_str());
+		};
+
+		auto buildAssistantBody = [](const Message &msg) -> std::string {
+			std::string body = msg.text;
+			if (!msg.tool_calls.is_null() && msg.tool_calls.is_array() &&
+				!msg.tool_calls.empty())
+			{
+				body += "\n\n**Tool calls:**";
+				for (size_t ti = 0; ti < msg.tool_calls.size(); ++ti)
+				{
+					const auto &toolCall = msg.tool_calls[ti];
+					if (toolCall.contains("function") &&
+						toolCall["function"].contains("name") &&
+						!toolCall["function"]["name"].is_null())
+					{
+						body += " `" +
+								toolCall["function"]["name"].get<std::string>() + "`";
+					}
+				}
+			}
+			return body;
+		};
+
+		bool anyAssistant = false;
+		for (const auto &msg : messagesCopy)
+		{
+			if (!msg.hide_message && msg.role == "assistant")
+			{
+				anyAssistant = true;
+				break;
+			}
+		}
+
+		if (!anyAssistant)
+		{
+			for (size_t i = 0; i < messageDisplayLines.size(); ++i)
+				ImGui::TextWrapped("%s", messageDisplayLines[i].c_str());
+			textSelect.update();
+		} else
+		{
+			bool firstVisible = true;
+			for (const auto &msg : messagesCopy)
+			{
+				if (msg.hide_message)
+					continue;
+
+				if (!firstVisible)
+					drawSeparator();
+				firstVisible = false;
+
+				if (msg.role == "assistant")
+				{
+					ImGui::TextColored(ImVec4(0.82f, 0.84f, 0.92f, 1.0f), "Agent");
+					NedMarkdown::Render(buildAssistantBody(msg), availableWidth);
+					ImGui::Spacing();
+					continue;
+				}
+
+				std::string displayText = msg.text;
+				if (msg.role == "user")
+					displayText = "🧑 User: " + displayText;
+				else if (msg.role == "tool")
+					displayText = "🔧 Tool Result: " + displayText;
+				else if (msg.role == "system")
+					displayText = "⚙️ System: " + displayText;
+
+				ImGui::TextWrapped("%s", displayText.c_str());
+				ImGui::Spacing();
+			}
 		}
 	}
-
-	// Let TextSelect handle selection and copy
-	textSelect.update();
 
 	// Scroll to bottom if the flag is set
 	if (scrollToBottom)

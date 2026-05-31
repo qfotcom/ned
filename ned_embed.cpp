@@ -26,6 +26,7 @@ Description: Implementation of the embeddable NED editor wrapper.
 #include "util/splitter.h"
 #include "util/terminal.h"
 #include "util/welcome.h"
+#include "ui/panels/node_editor_demo.h"
 #include "util/window_resize.h"
 
 // Include global variable declarations
@@ -181,9 +182,17 @@ void NedEmbed::render()
 		{
 			ImGui::Dummy(ImVec2(0, 0));
 		}
-		// Make sure we pop the font before returning to avoid font stack issues
 		ImGui::PopFont();
-		return; // Don't render editor when welcome screen is visible
+		return;
+	}
+
+	if (gNodeEditorDemo.isOpen())
+	{
+		gNodeEditorDemo.render();
+		if (isEmbedded)
+			ImGui::Dummy(ImVec2(0, 0));
+		ImGui::PopFont();
+		return;
 	}
 
 	if (Splitter::showSidebar)

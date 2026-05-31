@@ -3,6 +3,7 @@
 #include "../files/files.h"
 #include "../lsp/lsp_client.h"
 #include "../util/close_popper.h"
+#include "../ui/panels/node_editor_demo.h"
 #include "../util/settings.h"
 #include "../util/splitter.h"
 #include "../util/terminal.h"
@@ -620,6 +621,18 @@ bool KeybindsManager::handleKeyboardShortcuts()
 		ClosePopper::closeAll();
 		gFileExplorer.saveCurrentFile();
 		gFileExplorer._showFileDialog = true;
+		shortcutPressed = true;
+	}
+
+	ImGuiKey toggleNodeEditor = getActionKey("toggle_node_editor");
+	if (modPressed && io.KeyShift && ImGui::IsKeyPressed(toggleNodeEditor, false))
+	{
+		ClosePopper::closeAll();
+		gFileExplorer.showWelcomeScreen = false;
+		if (gNodeEditorDemo.isOpen())
+			gNodeEditorDemo.close();
+		else
+			gNodeEditorDemo.open();
 		shortcutPressed = true;
 	}
 

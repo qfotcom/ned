@@ -1,6 +1,7 @@
 [submodule "lib/imgui"]
     path = lib/imgui
-    url = https://github.com/ocornut/imgui.git
+    url = https://github.com/qfotcom/imgui.git
+    branch = ned-stack-layout
 [submodule "lib/nativefiledialog"] 
     path = lib/nativefiledialog
     url = https://github.com/mlabbe/nativefiledialog.git
@@ -67,3 +68,9 @@
 [submodule "lib/lsp-framework"]
 	path = lib/lsp-framework
 	url = https://github.com/leon-bckl/lsp-framework.git
+[submodule "lib/imgui_markdown"]
+	path = lib/imgui_markdown
+	url = https://github.com/enkisoftware/imgui_markdown.git
+[submodule "lib/imgui-node-editor"]
+	path = lib/imgui-node-editor
+	url = https://github.com/qfotcom/imgui-node-editor.git

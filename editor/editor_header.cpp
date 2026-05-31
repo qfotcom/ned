@@ -8,6 +8,8 @@ Description: Editor header rendering implementation for NED text editor.
 #include "editor/editor_git.h"
 #include "files/files.h"
 #include "imgui.h"
+#include "ui/markdown_file.h"
+#include "ui/panels/node_editor_demo.h"
 #include "util/settings.h"
 #include "util/terminal.h"
 #include <algorithm>
@@ -229,6 +231,65 @@ ImTextureID EditorHeader::getStatusIcon(const std::string &iconName)
 	return gFileExplorer.getIcon(iconName);
 }
 
+void EditorHeader::renderMarkdownViewToggle(float iconSize, const std::string &currentFile)
+{
+	if (!NedMarkdownFile::isMarkdownPath(currentFile))
+		return;
+
+	ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(5.0f, 0.0f));
+	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(2.0f, 0.0f));
+
+	const bool preview = gFileExplorer.markdownPreviewMode;
+	const ImVec4 activeBg = ImGui::GetStyle().Colors[ImGuiCol_Header];
+	const ImVec4 inactiveBg = ImVec4(0, 0, 0, 0);
+	const ImVec2 btnSize(iconSize * 1.15f, iconSize);
+
+	auto modeButton = [&](const char *id, const char *label, bool selected) {
+		if (selected)
+			ImGui::PushStyleColor(ImGuiCol_Button, activeBg);
+		else
+			ImGui::PushStyleColor(ImGuiCol_Button, inactiveBg);
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, activeBg);
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, activeBg);
+		if (ImGui::Button(label, btnSize))
+		{
+			if (id[0] == 'p')
+				gFileExplorer.markdownPreviewMode = true;
+			else
+				gFileExplorer.markdownPreviewMode = false;
+		}
+		if (ImGui::IsItemHovered())
+			ImGui::SetTooltip("%s", id[0] == 'p' ? "Markdown preview" : "Markdown source");
+		ImGui::PopStyleColor(3);
+	};
+
+	modeButton("src", "MD", !preview);
+	ImGui::SameLine(0.0f, 2.0f);
+	modeButton("preview", "Pv", preview);
+
+	ImGui::PopStyleVar(2);
+}
+
+void EditorHeader::renderNodeEditorIcon(float iconSize)
+{
+	ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(5.0f, 0.0f));
+	ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
+	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImGui::GetStyle().Colors[ImGuiCol_Header]);
+	ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImGui::GetStyle().Colors[ImGuiCol_HeaderActive]);
+
+	const ImVec2 btnSize(iconSize * 1.35f, iconSize);
+	if (ImGui::Button("Node", btnSize))
+	{
+		gFileExplorer.showWelcomeScreen = false;
+		gNodeEditorDemo.open();
+	}
+	if (ImGui::IsItemHovered())
+		ImGui::SetTooltip("Node Editor Demo (Ctrl+Shift+N)");
+
+	ImGui::PopStyleColor(3);
+	ImGui::PopStyleVar();
+}
+
 void EditorHeader::render(ImFont *font,
 						  const std::string &currentFile,
 						  bool showGitChanges)
@@ -242,14 +303,18 @@ void EditorHeader::render(ImFont *font,
 	float iconSize = ImGui::GetFontSize() * 1.15f;
 
 	// Calculate space needed for right-aligned status area
+	const bool isMarkdownDoc = NedMarkdownFile::isMarkdownPath(currentFile);
+	const float markdownToggleWidth =
+		isMarkdownDoc ? iconSize * 2.45f + 6.0f : 0.0f;
+	const float nodeEditorBtnWidth = iconSize * 1.55f + 4.0f;
 	const float rightPadding =
 		(currentFile == "Terminal") ? 25.0f : 25.0f; // Same padding as normal
 #ifdef PLATFORM_WINDOWS
 	const float totalStatusWidth =
-		iconSize * 2 + rightPadding; // Brain + Gear icons (no terminal on Windows)
+		iconSize * 2 + rightPadding + markdownToggleWidth + nodeEditorBtnWidth;
 #else
-	const float totalStatusWidth =
-		iconSize * 3 + rightPadding; // Brain + Terminal + Gear icons
+	const float totalStatusWidth = iconSize * 3 + rightPadding + markdownToggleWidth +
+								   nodeEditorBtnWidth;
 #endif
 
 	// Calculate space needed for git changes if enabled and available
@@ -334,9 +399,17 @@ void EditorHeader::render(ImFont *font,
 	// Status group
 	ImGui::BeginGroup();
 	{
-		// Vertical centering
+		// Vertical centering — use icon row height so buttons are not clipped
 		float textHeight = ImGui::GetTextLineHeight();
-		ImGui::SetCursorPosY(ImGui::GetCursorPosY() + (textHeight - iconSize) * 0.5f);
+		float rowHeight = std::max(textHeight, iconSize);
+		ImGui::SetCursorPosY(ImGui::GetCursorPosY() + (rowHeight - iconSize) * 0.5f);
+
+		renderMarkdownViewToggle(iconSize, currentFile);
+		if (isMarkdownDoc)
+			ImGui::SameLine(0.0f, 4.0f);
+
+		renderNodeEditorIcon(iconSize);
+		ImGui::SameLine(0.0f, 4.0f);
 
 		// Brain icon (only visible when active)
 		if (gAITab.request_active)
@@ -362,6 +435,8 @@ void EditorHeader::render(ImFont *font,
 
 	ImGui::PopFont();
 	ImGui::EndGroup();
+
+	ImGui::Dummy(ImVec2(0.0f, 2.0f));
 
 	// Custom separator for terminal to respect margins
 	if (currentFile == "Terminal")

@@ -38,6 +38,7 @@ class FileExplorer
 	std::string currentFile;
 
 	bool showWelcomeScreen = true;
+	bool markdownPreviewMode = false;
 
 	// File operations
 	void loadFileContent(const std::string &path,
@@ -174,6 +175,7 @@ class FileExplorer
 
 	// Find box helpers
 	void renderEditor(bool &text_changed);
+	void renderMarkdownPreview();
 };
 
 extern Editor gEditor;
