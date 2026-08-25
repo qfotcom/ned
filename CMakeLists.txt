@@ -619,3 +619,11 @@ file(COPY
   ${CMAKE_CURRENT_SOURCE_DIR}/editor/queries 
   DESTINATION ${CMAKE_BINARY_DIR}
 )
+
+# Multi-config generators (Visual Studio) place the exe in Release/Debug subdirs.
+add_custom_command(TARGET ned POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_directory
+    ${CMAKE_CURRENT_SOURCE_DIR}/shaders
+    $<TARGET_FILE_DIR:ned>/shaders
+  COMMENT "Copy shaders next to ned executable"
+)

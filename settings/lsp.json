@@ -4,6 +4,8 @@
       "language_name": "cpp",
       "language_file_extensions": [".cpp", ".cxx", ".cc", ".c", ".h", ".hpp", ".hxx", ".c++", ".h++"],
       "language_server_paths": [
+        "D:/APPLICATIONS/kdevelop-master-5871-windows-cl-msvc2022-x86_64/bin/clangd.exe",
+        "C:/APPLICATION/Qt/Tools/llvm-mingw1706_64/bin/clangd.exe",
         "clangd",
         "/usr/bin/clangd",
         "/usr/local/bin/clangd",

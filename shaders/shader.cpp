@@ -10,9 +10,71 @@
 #include <iostream>
 #include <set>
 #include <sstream>
+#include <vector>
 #ifndef PLATFORM_WINDOWS
 #include <unistd.h>
 #endif
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
+#endif
+
+namespace {
+
+std::string getExecutableDirectory()
+{
+#ifdef _WIN32
+	wchar_t buffer[MAX_PATH];
+	DWORD len = GetModuleFileNameW(nullptr, buffer, MAX_PATH);
+	if (len == 0 || len >= MAX_PATH)
+		return "";
+	return std::filesystem::path(buffer).parent_path().string();
+#elif defined(__linux__)
+	char exePath[4096];
+	ssize_t count = readlink("/proc/self/exe", exePath, sizeof(exePath) - 1);
+	if (count <= 0)
+		return "";
+	exePath[count] = '\0';
+	return std::filesystem::path(exePath).parent_path().string();
+#else
+	return "";
+#endif
+}
+
+std::string resolveShaderPath(const std::string &relativePath)
+{
+	const std::string debianPackageBasePath = "/usr/share/Ned/";
+	std::vector<std::string> candidates;
+	candidates.push_back(relativePath);
+	candidates.push_back(debianPackageBasePath + relativePath);
+
+	const std::string exeDir = getExecutableDirectory();
+	if (!exeDir.empty())
+	{
+		const auto exeBase = std::filesystem::path(exeDir);
+		candidates.push_back((exeBase / relativePath).string());
+		candidates.push_back((exeBase / ".." / relativePath).lexically_normal().string());
+		candidates.push_back(
+			(exeBase / "../.." / relativePath).lexically_normal().string());
+	}
+
+	candidates.push_back(
+		(std::filesystem::path("..") / relativePath).lexically_normal().string());
+	candidates.push_back(
+		(std::filesystem::path("../..") / relativePath).lexically_normal().string());
+
+	for (const auto &candidate : candidates)
+	{
+		if (std::filesystem::exists(candidate))
+		{
+			return candidate;
+		}
+	}
+
+	return "";
+}
+
+} // namespace
 
 Shader::Shader() { shaderProgram = 0; }
 
@@ -30,47 +92,24 @@ Shader::~Shader()
 bool Shader::loadShader(const std::string &vertexShaderRelativePath,
 						const std::string &fragmentShaderRelativePath)
 {
-	std::string finalVertexShaderPath;
-	std::string finalFragmentShaderPath;
+	const std::string finalVertexShaderPath = resolveShaderPath(vertexShaderRelativePath);
+	const std::string finalFragmentShaderPath =
+		resolveShaderPath(fragmentShaderRelativePath);
 
-	const std::string debian_package_base_path = "/usr/share/Ned/";
-
-	// --- Resolve Vertex Shader Path ---
-	if (std::filesystem::exists(vertexShaderRelativePath))
+	if (finalVertexShaderPath.empty())
 	{
-		finalVertexShaderPath = vertexShaderRelativePath;
-	} else
-	{
-		std::string packagedPath = debian_package_base_path + vertexShaderRelativePath;
-		if (std::filesystem::exists(packagedPath))
-		{
-			finalVertexShaderPath = packagedPath;
-		} else
-		{
-			std::cerr << "🔴 ERROR: Cannot find vertex shader. Tried:\n"
-					  << "  1. Relative/Dev path: " << vertexShaderRelativePath << "\n"
-					  << "  2. Debian package path: " << packagedPath << std::endl;
-			return false;
-		}
+		std::cerr << "🔴 ERROR: Cannot find vertex shader. Tried relative path, "
+					 "Debian package path, and paths next to the executable: "
+				  << vertexShaderRelativePath << std::endl;
+		return false;
 	}
 
-	// --- Resolve Fragment Shader Path ---
-	if (std::filesystem::exists(fragmentShaderRelativePath))
+	if (finalFragmentShaderPath.empty())
 	{
-		finalFragmentShaderPath = fragmentShaderRelativePath;
-	} else
-	{
-		std::string packagedPath = debian_package_base_path + fragmentShaderRelativePath;
-		if (std::filesystem::exists(packagedPath))
-		{
-			finalFragmentShaderPath = packagedPath;
-		} else
-		{
-			std::cerr << "🔴 ERROR: Cannot find fragment shader. Tried:\n"
-					  << "  1. Relative/Dev path: " << fragmentShaderRelativePath << "\n"
-					  << "  2. Debian package path: " << packagedPath << std::endl;
-			return false;
-		}
+		std::cerr << "🔴 ERROR: Cannot find fragment shader. Tried relative path, "
+					 "Debian package path, and paths next to the executable: "
+				  << fragmentShaderRelativePath << std::endl;
+		return false;
 	}
 
 	// Read vertex shader
