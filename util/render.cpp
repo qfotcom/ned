@@ -23,6 +23,7 @@ Description: Render and frame management class implementation for NED text edito
 #include "util/terminal.h"
 #include "util/welcome.h"
 #include "ui/panels/node_editor_demo.h"
+#include "ui/panels/implot_demo.h"
 #include <GLFW/glfw3.h>
 #include <iostream>
 #include <thread>
@@ -423,6 +424,12 @@ void Render::renderMainWindow(GLFWwindow *window,
 	if (gNodeEditorDemo.isOpen())
 	{
 		gNodeEditorDemo.render();
+		return;
+	}
+
+	if (gImPlotDemo.isOpen())
+	{
+		gImPlotDemo.render();
 		return;
 	}
 

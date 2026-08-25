@@ -40,4 +40,5 @@ class EditorHeader
 
 	void renderMarkdownViewToggle(float iconSize, const std::string &currentFile);
 	void renderNodeEditorIcon(float iconSize);
+	void renderImPlotIcon(float iconSize);
 };

@@ -27,6 +27,7 @@ Description: Implementation of the embeddable NED editor wrapper.
 #include "util/terminal.h"
 #include "util/welcome.h"
 #include "ui/panels/node_editor_demo.h"
+#include "ui/panels/implot_demo.h"
 #include "util/window_resize.h"
 
 // Include global variable declarations
@@ -189,6 +190,15 @@ void NedEmbed::render()
 	if (gNodeEditorDemo.isOpen())
 	{
 		gNodeEditorDemo.render();
+		if (isEmbedded)
+			ImGui::Dummy(ImVec2(0, 0));
+		ImGui::PopFont();
+		return;
+	}
+
+	if (gImPlotDemo.isOpen())
+	{
+		gImPlotDemo.render();
 		if (isEmbedded)
 			ImGui::Dummy(ImVec2(0, 0));
 		ImGui::PopFont();

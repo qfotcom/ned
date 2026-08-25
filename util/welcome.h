@@ -20,8 +20,9 @@ class Welcome
   private:
 	Welcome()
 		: frameCount(0), lastTime(0.0), fps(0), isEmbedded(false), nedLogoTexture(0),
-		  hoveredThemeIndex(-1), hoverStartTime(0.0), isPreviewingTheme(false),
-		  clickedThemeIndex(-1), clickAnimationStartTime(0.0),
+		  nedLogoLoadAttempted(false), welcomeImagesLoadAttempted(false),
+		  welcomeImagesAllLoaded(false), hoveredThemeIndex(-1), hoverStartTime(0.0),
+		  isPreviewingTheme(false), clickedThemeIndex(-1), clickAnimationStartTime(0.0),
 		  isPlayingClickAnimation(false)
 	{
 		// Initialize welcome images
@@ -39,6 +40,9 @@ class Welcome
 
 	// Logo texture
 	GLuint nedLogoTexture;
+	bool nedLogoLoadAttempted;
+	bool welcomeImagesLoadAttempted;
+	bool welcomeImagesAllLoaded;
 
 	// Welcome theme images
 	struct WelcomeImage

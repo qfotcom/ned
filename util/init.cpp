@@ -9,6 +9,7 @@ Consolidated from ned.cpp and initialization_manager.cpp
 #include "files/files.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
+#include "implot.h"
 #include "shaders/shader_types.h"
 #include "util/app.h"
 #include "util/debug_console.h"
@@ -116,6 +117,7 @@ void Init::initializeImGui(GLFWwindow *window)
 {
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
+	ImPlot::CreateContext();
 	ImGuiIO &io = ImGui::GetIO();
 	io.IniFilename = NULL; // Disable ImGui .ini file writing
 	(void)io;

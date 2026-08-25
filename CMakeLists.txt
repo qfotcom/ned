@@ -293,6 +293,14 @@ set(IMGUI_NODE_EDITOR_SOURCES
 
 set(BLUEPRINTS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ui/panels/blueprints)
 
+set(IMPLOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/lib/implot)
+
+set(IMPLOT_SOURCES
+  ${IMPLOT_DIR}/implot.cpp
+  ${IMPLOT_DIR}/implot_items.cpp
+  ${IMPLOT_DIR}/implot_demo.cpp
+)
+
 set(BLUEPRINTS_SOURCES
   ${BLUEPRINTS_DIR}/blueprints_texture.cpp
   ${BLUEPRINTS_DIR}/blueprints_editor.cpp
@@ -306,13 +314,17 @@ add_library(ned_ui OBJECT
   ui/ned_node_editor.cpp
   ui/markdown_file.cpp
   ui/panels/node_editor_demo.cpp
+  ui/panels/implot_demo.cpp
+  ui/panels/implot_demo_embed.cpp
   ${BLUEPRINTS_SOURCES}
   ${IMGUI_NODE_EDITOR_SOURCES}
+  ${IMPLOT_SOURCES}
 )
 target_include_directories(ned_ui PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}
   ${CMAKE_CURRENT_SOURCE_DIR}/ui
   ${BLUEPRINTS_DIR}
+  ${IMPLOT_DIR}
   ${IMGUI_INCLUDE_DIRS}
   ${CMAKE_CURRENT_SOURCE_DIR}/lib/imgui_markdown
   ${IMGUI_NODE_EDITOR_DIR}
@@ -348,6 +360,7 @@ add_library(ned_util STATIC
 )
 target_include_directories(ned_util PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}
+  ${CMAKE_CURRENT_SOURCE_DIR}/lib/implot
   ${IMGUI_INCLUDE_DIRS}
   editor
   files
@@ -625,5 +638,17 @@ add_custom_command(TARGET ned POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E copy_directory
     ${CMAKE_CURRENT_SOURCE_DIR}/shaders
     $<TARGET_FILE_DIR:ned>/shaders
-  COMMENT "Copy shaders next to ned executable"
+  COMMAND ${CMAKE_COMMAND} -E copy_directory
+    ${CMAKE_CURRENT_SOURCE_DIR}/icons
+    $<TARGET_FILE_DIR:ned>/icons
+  COMMAND ${CMAKE_COMMAND} -E copy_directory
+    ${CMAKE_CURRENT_SOURCE_DIR}/fonts
+    $<TARGET_FILE_DIR:ned>/fonts
+  COMMAND ${CMAKE_COMMAND} -E copy_directory
+    ${CMAKE_CURRENT_SOURCE_DIR}/settings
+    $<TARGET_FILE_DIR:ned>/settings
+  COMMAND ${CMAKE_COMMAND} -E copy_directory
+    ${CMAKE_CURRENT_SOURCE_DIR}/editor/queries
+    $<TARGET_FILE_DIR:ned>/editor/queries
+  COMMENT "Copy runtime resources next to ned executable"
 )

@@ -1,6 +1,7 @@
 #include "welcome.h"
 #include "../files/files.h"
 #include "../ui/panels/node_editor_demo.h"
+#include "../ui/panels/implot_demo.h"
 #include "settings.h"
 #include "util/debug_console.h"
 #include <iostream>
@@ -27,7 +28,11 @@ void Welcome::calculateFPS()
 bool Welcome::loadNedLogo()
 {
 	if (nedLogoTexture != 0)
-		return true; // Already loaded
+		return true;
+	if (nedLogoLoadAttempted)
+		return false;
+
+	nedLogoLoadAttempted = true;
 
 	int width, height, channels;
 	unsigned char *data = stbi_load("icons/ned.png", &width, &height, &channels, 4);
@@ -51,6 +56,10 @@ bool Welcome::loadNedLogo()
 
 bool Welcome::loadWelcomeImages()
 {
+	if (welcomeImagesLoadAttempted)
+		return welcomeImagesAllLoaded;
+
+	welcomeImagesLoadAttempted = true;
 	bool allLoaded = true;
 
 	for (int i = 0; i < 4; i++)
@@ -80,6 +89,7 @@ bool Welcome::loadWelcomeImages()
 		welcomeImages[i].loaded = true;
 	}
 
+	welcomeImagesAllLoaded = allLoaded;
 	return allLoaded;
 }
 
@@ -452,8 +462,22 @@ void Welcome::render()
 		ImGui::PopStyleVar();
 		ImGui::PopStyleColor(3);
 
+		float plotDemoY = nodeDemoY + 44.0f + 12.0f;
+		ImGui::SetCursorPos(ImVec2(buttonX, plotDemoY));
+		ImGui::PushStyleColor(ImGuiCol_Button, buttonBgColor);
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, hoverColor);
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, activeColor);
+		ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 8.0f);
+		if (ImGui::Button("ImPlot Demo", ImVec2(buttonWidth, 44.0f)))
+		{
+			gFileExplorer.showWelcomeScreen = false;
+			gImPlotDemo.open();
+		}
+		ImGui::PopStyleVar();
+		ImGui::PopStyleColor(3);
+
 		// Keybinds section under the button on the right side
-		float keybindsY = nodeDemoY + 44.0f + 30.0f;
+		float keybindsY = plotDemoY + 44.0f + 30.0f;
 		float keybindsX = contentStartX;
 
 		// Only show keybinds if there's enough space
@@ -472,15 +496,18 @@ void Welcome::render()
 				// Two column layout aligned under the button
 				const char *keybinds[] = {"CMD+O Open Folder",
 										  "CMD+Shift+N Node Editor",
+										  "CMD+Shift+H ImPlot Demo",
 										  "CMD+T Terminal",
 										  "CMD+B Bookmarks",
 										  "CMD+: Line Jump",
 										  "CMD+F Find",
 										  "CMD+/ Show this window"};
 
-				// Two-column layout: 3 rows, 2 columns
+				// Two-column layout: 4 rows, 2 columns
 				float colSpacing = 200.0f;
-				for (int i = 0; i < 3; i++)
+				const int keybindCount = IM_ARRAYSIZE(keybinds);
+				const int rowCount = (keybindCount + 1) / 2;
+				for (int i = 0; i < rowCount; i++)
 				{
 					// Get theme text color for keybinds (slightly dimmed)
 					extern Settings gSettings;
@@ -495,7 +522,7 @@ void Welcome::render()
 					ImGui::TextColored(keybindColor, "%s", keybinds[i * 2]);
 
 					// Right column
-					if (i * 2 + 1 < 6)
+					if (i * 2 + 1 < keybindCount)
 					{
 						ImGui::SetCursorPos(
 							ImVec2(keybindsX + colSpacing, keybindsY + i * 22.0f));
@@ -634,6 +661,20 @@ void Welcome::render()
 		{
 			gFileExplorer.showWelcomeScreen = false;
 			gNodeEditorDemo.open();
+		}
+		ImGui::PopStyleVar();
+		ImGui::PopStyleColor(3);
+
+		ImGui::SetCursorPos(
+			ImVec2((windowWidth - buttonWidth) * 0.5f, currentY + buttonHeight + 60.0f));
+		ImGui::PushStyleColor(ImGuiCol_Button, buttonBgColor);
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, hoverColor);
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, activeColor);
+		ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 8.0f);
+		if (ImGui::Button("ImPlot Demo", ImVec2(buttonWidth, 44.0f)))
+		{
+			gFileExplorer.showWelcomeScreen = false;
+			gImPlotDemo.open();
 		}
 		ImGui::PopStyleVar();
 		ImGui::PopStyleColor(3);

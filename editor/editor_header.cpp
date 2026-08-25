@@ -10,6 +10,7 @@ Description: Editor header rendering implementation for NED text editor.
 #include "imgui.h"
 #include "ui/markdown_file.h"
 #include "ui/panels/node_editor_demo.h"
+#include "ui/panels/implot_demo.h"
 #include "util/settings.h"
 #include "util/terminal.h"
 #include <algorithm>
@@ -290,6 +291,26 @@ void EditorHeader::renderNodeEditorIcon(float iconSize)
 	ImGui::PopStyleVar();
 }
 
+void EditorHeader::renderImPlotIcon(float iconSize)
+{
+	ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(5.0f, 0.0f));
+	ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
+	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImGui::GetStyle().Colors[ImGuiCol_Header]);
+	ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImGui::GetStyle().Colors[ImGuiCol_HeaderActive]);
+
+	const ImVec2 btnSize(iconSize * 1.35f, iconSize);
+	if (ImGui::Button("Plot", btnSize))
+	{
+		gFileExplorer.showWelcomeScreen = false;
+		gImPlotDemo.open();
+	}
+	if (ImGui::IsItemHovered())
+		ImGui::SetTooltip("ImPlot Demo (Ctrl+Shift+H)");
+
+	ImGui::PopStyleColor(3);
+	ImGui::PopStyleVar();
+}
+
 void EditorHeader::render(ImFont *font,
 						  const std::string &currentFile,
 						  bool showGitChanges)
@@ -409,6 +430,8 @@ void EditorHeader::render(ImFont *font,
 			ImGui::SameLine(0.0f, 4.0f);
 
 		renderNodeEditorIcon(iconSize);
+		ImGui::SameLine(0.0f, 4.0f);
+		renderImPlotIcon(iconSize);
 		ImGui::SameLine(0.0f, 4.0f);
 
 		// Brain icon (only visible when active)

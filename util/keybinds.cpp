@@ -4,6 +4,7 @@
 #include "../lsp/lsp_client.h"
 #include "../util/close_popper.h"
 #include "../ui/panels/node_editor_demo.h"
+#include "../ui/panels/implot_demo.h"
 #include "../util/settings.h"
 #include "../util/splitter.h"
 #include "../util/terminal.h"
@@ -633,6 +634,18 @@ bool KeybindsManager::handleKeyboardShortcuts()
 			gNodeEditorDemo.close();
 		else
 			gNodeEditorDemo.open();
+		shortcutPressed = true;
+	}
+
+	ImGuiKey toggleImPlotDemo = getActionKey("toggle_implot_demo");
+	if (modPressed && io.KeyShift && ImGui::IsKeyPressed(toggleImPlotDemo, false))
+	{
+		ClosePopper::closeAll();
+		gFileExplorer.showWelcomeScreen = false;
+		if (gImPlotDemo.isOpen())
+			gImPlotDemo.close();
+		else
+			gImPlotDemo.open();
 		shortcutPressed = true;
 	}
 

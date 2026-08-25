@@ -11,6 +11,7 @@ editor. This class combines the functionality of ApplicationManager and Graphics
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
+#include "implot.h"
 #include "settings.h"
 #include "shaders/shader_manager.h"
 #include "util/font.h"
@@ -683,5 +684,6 @@ void App::cleanupImGui()
 {
 	ImGui_ImplOpenGL3_Shutdown();
 	ImGui_ImplGlfw_Shutdown();
+	ImPlot::DestroyContext();
 	ImGui::DestroyContext();
 }

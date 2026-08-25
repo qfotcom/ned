@@ -6,6 +6,7 @@
     "toggle_sidebar" : "s",
     "toggle_agent" : "u",
     "toggle_node_editor" : "n",
+    "toggle_implot_demo" : "h",
     "lsp_symbol_info" : "i",
     "lsp_find_ref" : "r",
     "lsp_find_def" : "d",
